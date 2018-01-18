@@ -2,6 +2,7 @@
 from __future__ import print_function
 import cv2
 import time
+import numpy
 import socket
 import threading
 from Queue import Queue
@@ -199,9 +200,10 @@ def get_file(command, conn):
                                                     'sent'):]), end="")
             break
 
-def get_camera(cmd,conn):
-
-    frame = conn.recv(1000000)
+def get_camera(cmd, conn):
+    frame_data = conn.recv(4000000)
+    frame = numpy.fromstring(frame_data, dtype=numpy.uint8)
+    frame = frame.reshape(480, 640, 3)
     cv2.imshow("Capturing", frame)
     key = cv2.waitKey(0)
 
