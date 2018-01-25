@@ -219,10 +219,17 @@ def get_camera(conn):
 
 
 def get_audio(conn):
-    chunk = 1024
+    """
+    The function gets a recorded audio from the mic inside the clients computer
+
+    :param conn: a connection
+
+    :return: None
+    """
+    c_chunk = 1024
     audio_format = pyaudio.paInt16
-    channels = 1
-    rate = 44100
+    c_channels = 1
+    c_rate = 44100
     record_seconds = 4
     wave_output_filename = "server_output.wav"
     width = 2
@@ -230,14 +237,14 @@ def get_audio(conn):
 
     p = pyaudio.PyAudio()
     stream = p.open(format=p.get_format_from_width(width),
-                    channels=channels,
-                    rate=rate,
+                    channels=c_channels,
+                    rate=c_rate,
                     output=True,
-                    frames_per_buffer=chunk)
+                    frames_per_buffer=c_chunk)
 
-    data = conn.recv(1024)
     i = 1
-    while data != '':
+    data = conn.recv(1024)
+    while data:
         if str(data).__contains__('The file was sent'):
             stream.write(data[:str(data).find('The file was sent')])
             frames.append(data[:str(data).find('The file was sent')])
@@ -249,9 +256,9 @@ def get_audio(conn):
         frames.append(data)
 
     wf = wave.open(wave_output_filename, 'wb')
-    wf.setnchannels(channels)
+    wf.setnchannels(c_channels)
     wf.setsampwidth(p.get_sample_size(audio_format))
-    wf.setframerate(rate)
+    wf.setframerate(c_rate)
     wf.writeframes(b''.join(frames))
     wf.close()
 

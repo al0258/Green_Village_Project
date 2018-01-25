@@ -252,6 +252,11 @@ def decrypt(key, filename, file_path):
 
 
 def send_audio():
+    """
+    The function sends recorded audio from the computers mic to server computer
+
+    :return: None
+    """
     chunk = 1024
     audio_format = pyaudio.paInt16
     channels = 1
