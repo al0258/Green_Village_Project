@@ -52,56 +52,6 @@ def socket_connect():
         socket_connect()
 
 
-def send_file(file_path):
-    """
-    The function sends a file to the server
-
-    :param file_path: The path of the file we want to send
-    :type file_path: str
-
-    :return: None
-    """
-    f = open(str(file_path), 'rb')
-    print 'Sending...'
-    file_conn = f.read(20480)
-    while file_conn:
-        print 'Sending...'
-        s.send(file_conn)
-        file_conn = f.read(20480)
-    f.close()
-    print "Done Sending"
-    output_str = "The file was sent" + "\n"
-    s.send(str.encode(output_str + str(os.getcwd()) + '> '))
-
-
-def recieve_file(filename):
-    desktop = 'C:\Users\{0}\Desktop\\'.format(getuser())
-    f = open(str(desktop + filename), 'wb')
-    not_exist = False
-    while True:
-        print("Receiving...")
-        file_conn = s.recv(20480)
-        while file_conn:
-            if str(file_conn).__contains__('The file was sent'):
-                f.write(file_conn[:str(file_conn).find('The file was sent')])
-                break
-            elif str(file_conn).__contains__('The file does'):
-                output_str = "The file does not exist rewrite the command" + "\n"
-                s.send(str.encode(output_str + str(os.getcwd()) + '> '))
-                print('The file does not exist rewrite the command')
-                not_exist = True
-                break
-            print("Receiving...")
-            f.write(file_conn)
-            file_conn = s.recv(20480)
-        if not not_exist:
-            f.close()
-            output_str = "The file was recieved" + "\n"
-            s.send(str.encode(output_str + str(os.getcwd()) + '> '))
-            print("Done Receiving")
-            break
-
-
 def receive_commands():
     """
     The function receives commands from the socket
@@ -147,6 +97,7 @@ def receive_commands():
                         output_str = "Could not transfer the file" + "\n"
                         s.send(str.encode(output_str + str(os.getcwd()) + '> '))
                         print(output_str)
+            # transfer files to the Client from the Server
             elif data[:9].decode("utf-8") == 'send file':
                 file_path = data[10:].decode("utf-8")
                 file_name = os.path.basename(file_path)
@@ -226,6 +177,63 @@ def receive_commands():
                     s.send(str.encode(output_str + str(os.getcwd()) + '> '))
                     print(output_str)
     s.close()
+
+
+def recieve_file(filename):
+    """
+    The function receives files from the Server
+
+    :param filename: The name of the file transferred
+
+    :return: None
+    """
+    desktop = 'C:\Users\{0}\Desktop\\'.format(getuser())
+    f = open(str(desktop + filename), 'wb')
+    not_exist = False
+    while True:
+        print("Receiving...")
+        file_conn = s.recv(20480)
+        while file_conn:
+            if str(file_conn).__contains__('The file was sent'):
+                f.write(file_conn[:str(file_conn).find('The file was sent')])
+                break
+            elif str(file_conn).__contains__('The file does'):
+                output_str = "The file doesnt exist rewrite the command" + "\n"
+                s.send(str.encode(output_str + str(os.getcwd()) + '> '))
+                print('The file does not exist rewrite the command')
+                not_exist = True
+                break
+            print("Receiving...")
+            f.write(file_conn)
+            file_conn = s.recv(20480)
+        if not not_exist:
+            f.close()
+            output_str = "The file was recieved" + "\n"
+            s.send(str.encode(output_str + str(os.getcwd()) + '> '))
+            print("Done Receiving")
+            break
+
+
+def send_file(file_path):
+    """
+    The function sends a file to the server
+
+    :param file_path: The path of the file we want to send
+    :type file_path: str
+
+    :return: None
+    """
+    f = open(str(file_path), 'rb')
+    print 'Sending...'
+    file_conn = f.read(20480)
+    while file_conn:
+        print 'Sending...'
+        s.send(file_conn)
+        file_conn = f.read(20480)
+    f.close()
+    print "Done Sending"
+    output_str = "The file was sent" + "\n"
+    s.send(str.encode(output_str + str(os.getcwd()) + '> '))
 
 
 def get_key(password):

@@ -22,6 +22,10 @@ COMMANDS = {'help': ['Shows this help'],
                 'After making a connection, you can use this command '
                 'to transfer files. Add the name of the file with its'
                 'extension after writing transfer'],
+            'send file': [
+                'After making a connection, you can use this command '
+                'to transfer files to the client. Add the path of the '
+                'file after writing the command'],
             'encrypt': [
                 'After making a connection, you can use this command '
                 'to encrypt files on the clients computer. '
@@ -213,22 +217,24 @@ def get_target(cmd):
 
 def send_file(file_path, conn):
     """
-    The function sends a file to the server
+    The function sends a file to the client
 
     :param file_path: The path of the file we want to send
     :type file_path: str
 
+    :param conn: A connection
+
     :return: None
     """
     f = open(str(file_path), 'rb')
-    print ('Sending...')
+    print('Sending...')
     file_conn = f.read(20480)
     while file_conn:
-        print ('Sending...')
+        print('Sending...')
         conn.send(file_conn)
         file_conn = f.read(20480)
     f.close()
-    print ("Done Sending")
+    print("Done Sending")
     output_str = "The file was sent" + "\n"
     conn.send(str.encode(output_str))
 
